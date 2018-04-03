@@ -1,4 +1,6 @@
 import wx
+import su_ustream_front
+import wx.richtext as rt
 
 
 class Window(wx.Frame):
@@ -30,31 +32,78 @@ class Window(wx.Frame):
     def open_select(self, event):
         if self.service_choice.GetStringSelection() == "uStream":
             self.Destroy()
-            frame = UStream()
+            frame = InterfaceWindow()
             frame.Show()
         elif self.service_choice.GetStringSelection() == "More...":
             wx.MessageBox('Coming Soon!', 'More...', wx.OK | wx.ICON_INFORMATION)
 
 
-class UStream(wx.Frame):
+class InterfaceWindow(wx.Frame):
 
-    class UStreamTop(wx.Panel):
+    class InterfaceTop(wx.Panel):
         def __init__(self, parent):
             wx.Panel.__init__(self, parent, size=(1280, 100))
             self.SetBackgroundColour('#241773')
 
-    class UStreamSide(wx.Panel):
+            self.search_site = wx.SearchCtrl(self, -1, style=wx.TE_PROCESS_ENTER, name='Search for broadcaster')
+            self.search_site.ShowCancelButton(True)
+            self.image_maybe = wx.StaticText(self, -1, "")
+            self.image_maybe2 = wx.StaticText(self, -1, "")
+            xlobox = wx.BoxSizer(wx.HORIZONTAL)
+            xlobox.Add(self.image_maybe, 19, wx.EXPAND + wx.CENTER)
+            xlobox.Add(self.search_site, 50, wx.ALIGN_CENTER)
+            xlobox.Add(self.image_maybe2, 10, wx.EXPAND + wx.CENTER)
+            self.SetSizer(xlobox)
+            self.Layout()
+
+    class InterfaceSide(wx.Panel):
+
         def __init__(self, parent):
             wx.Panel.__init__(self, parent, size=(300, 668))
             self.SetBackgroundColour('#999999')
-            change_p_button = wx.Button(self, label='Change Platform', pos=(85, 580))
-            change_p_button.Bind(wx.EVT_BUTTON, self.return_service_select)
+            large_font = wx.Font(16, wx.MODERN, wx.NORMAL, wx.NORMAL, False, u'Verdana')
+            small_font = wx.Font(10, wx.MODERN, wx.NORMAL, wx.NORMAL, False, u'Verdana')
+            ###########################################################################################################
+            self.menu_tree = wx.TreeCtrl(self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize,
+                                         style=wx.TR_NO_LINES | wx.TR_HAS_BUTTONS | wx.TR_DEFAULT_STYLE)
+            self.menu_tree.SetBackgroundColour('#999999')
+            self.menu_tree.SetWindowStyleFlag(wx.NO_BORDER)
+            self.menu_tree.SetWindowStyleFlag(wx.TR_HIDE_ROOT)
+            self.menu_root = self.menu_tree.AddRoot('I should be hidden')
+            ###########################################################################################################
+            self.browse_sub_root = self.menu_tree.AppendItem(self.menu_root, 'Browse')
+
+            for i, text in enumerate(su_ustream_front.SideBar.Browse):
+                self.menu_tree.AppendItem(self.browse_sub_root, text)
+            ###########################################################################################################
+            self.log_in_sub_root = self.menu_tree.AppendItem(self.menu_root, 'Log-in')
+
+            for i, text in enumerate(su_ustream_front.SideBar.Log_in):
+                self.menu_tree.AppendItem(self.log_in_sub_root, text)
+            ###########################################################################################################
+            self.options_sub_root = self.menu_tree.AppendItem(self.menu_root, 'Options')
+
+            for i, text in enumerate(su_ustream_front.SideBar.Options):
+                self.menu_tree.AppendItem(self.options_sub_root, text)
+            ###########################################################################################################
+            self.change_p_button = wx.Button(self, label='Change Platform')
+            self.change_p_button.Bind(wx.EVT_BUTTON, self.return_service_select)
+            ###########################################################################################################
+
+            ###########################################################################################################
+            xdbox = wx.BoxSizer(wx.VERTICAL)
+            xdbox.Add(self.menu_tree, 10, wx.EXPAND)
+            xdbox.Add(self.change_p_button, 1, wx.ALIGN_CENTER)
+            self.SetSizer(xdbox)
+            self.Layout()
 
         def return_service_select(self, event):
             frame = Window()
             frame.Show()
 
-    class UStreamMain(wx.Panel):
+        #def write_text(self):
+
+    class InterfaceMain(wx.Panel):
         def __init__(self, parent):
             wx.Panel.__init__(self, parent, size=(980, 668))
             self.SetBackgroundColour('#FFFFFF')
@@ -63,9 +112,9 @@ class UStream(wx.Frame):
         wx.Frame.__init__(self, None, title='Streamlink/uStream GUI', size=(1280, 768),
                           style=wx.MINIMIZE_BOX | wx.SYSTEM_MENU | wx.CAPTION | wx.CLOSE_BOX)
 
-        panel1 = UStream.UStreamTop(self)
-        panel2 = UStream.UStreamSide(self)
-        panel3 = UStream.UStreamMain(self)
+        panel1 = InterfaceWindow.InterfaceTop(self)
+        panel2 = InterfaceWindow.InterfaceSide(self)
+        panel3 = InterfaceWindow.InterfaceMain(self)
 
         box = wx.BoxSizer(wx.VERTICAL)
         box2 = wx.BoxSizer(wx.HORIZONTAL)
