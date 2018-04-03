@@ -1,6 +1,5 @@
 import wx
 import su_ustream_front
-import wx.richtext as rt
 
 
 class Window(wx.Frame):
@@ -49,8 +48,11 @@ class InterfaceWindow(wx.Frame):
             self.search_site.ShowCancelButton(True)
             self.image_maybe = wx.StaticText(self, -1, "")
             self.image_maybe2 = wx.StaticText(self, -1, "")
+
+            self.png = wx.StaticBitmap(self, -1, wx.Bitmap("uStream_logo.png", wx.BITMAP_TYPE_ANY))
+
             xlobox = wx.BoxSizer(wx.HORIZONTAL)
-            xlobox.Add(self.image_maybe, 19, wx.EXPAND + wx.CENTER)
+            xlobox.Add(self.png, 19, wx.ALIGN_CENTER)
             xlobox.Add(self.search_site, 50, wx.ALIGN_CENTER)
             xlobox.Add(self.image_maybe2, 10, wx.EXPAND + wx.CENTER)
             self.SetSizer(xlobox)
@@ -59,30 +61,29 @@ class InterfaceWindow(wx.Frame):
     class InterfaceSide(wx.Panel):
 
         def __init__(self, parent):
-            wx.Panel.__init__(self, parent, size=(300, 668))
+            wx.Panel.__init__(self, parent, size=(200, 668))
             self.SetBackgroundColour('#999999')
             large_font = wx.Font(16, wx.MODERN, wx.NORMAL, wx.NORMAL, False, u'Verdana')
             small_font = wx.Font(10, wx.MODERN, wx.NORMAL, wx.NORMAL, False, u'Verdana')
             ###########################################################################################################
-            self.menu_tree = wx.TreeCtrl(self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize,
-                                         style=wx.TR_NO_LINES | wx.TR_HAS_BUTTONS | wx.TR_DEFAULT_STYLE)
+            self.menu_tree = wx.TreeCtrl(self, wx.ID_ANY, style=wx.TR_NO_LINES | wx.TR_HAS_BUTTONS)
             self.menu_tree.SetBackgroundColour('#999999')
-            self.menu_tree.SetWindowStyleFlag(wx.NO_BORDER)
-            self.menu_tree.SetWindowStyleFlag(wx.TR_HIDE_ROOT)
+            self.menu_tree.SetWindowStyleFlag(wx.NO_BORDER + wx.TR_HIDE_ROOT)
             self.menu_root = self.menu_tree.AddRoot('I should be hidden')
             ###########################################################################################################
             self.browse_sub_root = self.menu_tree.AppendItem(self.menu_root, 'Browse')
-
+            #self.menu_tree.SetItemFont(self.browse_sub_root, small_font)
             for i, text in enumerate(su_ustream_front.SideBar.Browse):
                 self.menu_tree.AppendItem(self.browse_sub_root, text)
             ###########################################################################################################
             self.log_in_sub_root = self.menu_tree.AppendItem(self.menu_root, 'Log-in')
-
+            #self.menu_tree.SetItemFont(self.log_in_sub_root, small_font)
             for i, text in enumerate(su_ustream_front.SideBar.Log_in):
                 self.menu_tree.AppendItem(self.log_in_sub_root, text)
+
             ###########################################################################################################
             self.options_sub_root = self.menu_tree.AppendItem(self.menu_root, 'Options')
-
+            #self.menu_tree.SetItemFont(self.options_sub_root, small_font)
             for i, text in enumerate(su_ustream_front.SideBar.Options):
                 self.menu_tree.AppendItem(self.options_sub_root, text)
             ###########################################################################################################
@@ -92,7 +93,7 @@ class InterfaceWindow(wx.Frame):
 
             ###########################################################################################################
             xdbox = wx.BoxSizer(wx.VERTICAL)
-            xdbox.Add(self.menu_tree, 10, wx.EXPAND)
+            xdbox.Add(self.menu_tree, 15, wx.EXPAND)
             xdbox.Add(self.change_p_button, 1, wx.ALIGN_CENTER)
             self.SetSizer(xdbox)
             self.Layout()
@@ -105,7 +106,7 @@ class InterfaceWindow(wx.Frame):
 
     class InterfaceMain(wx.Panel):
         def __init__(self, parent):
-            wx.Panel.__init__(self, parent, size=(980, 668))
+            wx.Panel.__init__(self, parent, size=(1080, 668))
             self.SetBackgroundColour('#FFFFFF')
 
     def __init__(self):
