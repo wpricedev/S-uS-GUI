@@ -1,70 +1,134 @@
 import wx
-import su_ustream_front
+from wx.lib.pubsub import pub   # Inter-frame messaging
+import su_ustream_front     # Settings in another file, specifically for uStream
 
+###########################################################################################################
+#   Frame for the Advanced Settings Window
+###########################################################################################################
+class Advanced(wx.Frame):
 
+    class AdvancedPanel(wx.Panel):
+        def __init__(self, parent):
+            wx.Panel.__init__(self, parent, size=(300, 500))
+            self.SetBackgroundColour('#FFFFFF')
+            ###########################################################################################################
+            temp_txt1 = wx.StaticText(self, -1, "")
+            temp_txt2 = wx.StaticText(self, -1, "")
+            temp_txt3 = wx.StaticText(self, -1, "")
+            self.dark_mode_txt = wx.StaticText(self, -1, "Dark Mode", style=wx.ALIGN_CENTER_VERTICAL)
+            self.dark_mode_checkb = wx.CheckBox(self, label='Enable')
+            self.dark_mode_checkb.Bind(wx.EVT_CHECKBOX, self.dark_mode)
+            self.dark_mode_checkb.SetValue(False)
+            ###########################################################################################################
+            box = wx.BoxSizer(wx.VERTICAL)
+            box2 = wx.BoxSizer(wx.HORIZONTAL)
+            box.Add(box2, 1, wx.EXPAND)
+            box2.Add(temp_txt1, 20)
+            box2.Add(self.dark_mode_txt, 40)
+            box2.Add(self.dark_mode_checkb, 20)
+            box2.Add(temp_txt2, 20)
+            ###########################################################################################################
+            self.SetSizer(box)
+            self.Layout()
+            ###########################################################################################################
+
+        def dark_mode(self, event):
+            pub.sendMessage('dark_mode', message=['#333333', '#666666'])
+            self.dark_mode_checkb.SetValue(True)
+            # ToDo Enable saving of settings. Possibly via a file!
+
+    def __init__(self):
+        wx.Frame.__init__(self, None, -1, title='Advanced Settings', size=(300, 200),
+                          style=wx.MINIMIZE_BOX | wx.SYSTEM_MENU | wx.CAPTION | wx.CLOSE_BOX)
+        ###########################################################################################################
+        self.pnl = Advanced.AdvancedPanel(self)
+        ###########################################################################################################
+        self.SetAutoLayout(True)
+        self.Layout()
+        self.Show()
+        self.Centre(wx.BOTH)
+        ###########################################################################################################
+
+###########################################################################################################
+#   Frame for the opening dialogue window asking for a service to select
+###########################################################################################################
 class Window(wx.Frame):
 
     def __init__(self):
         wx.Frame.__init__(self, None, -1, title='Service Select', size=(400, 150),
                           style=wx.MINIMIZE_BOX | wx.SYSTEM_MENU | wx.CAPTION | wx.CLOSE_BOX)
-        self.pnl = wx.Panel(self, -1)
-
-        service = ['uStream', 'More...']
+        self.pnl = wx.Panel(self, -1)   # For this frame, there is no need for a complicated panel
+        ###########################################################################################################
+        service = ['uStream', 'More...']    # 'More...' being a place holder and *future* redirect
         self.service_choice = wx.Choice(self.pnl, choices=service, pos=(15, 40), size=(352, 25))
         self.service_choice.SetSelection(-1)
-
+        ###########################################################################################################
         select_instr = "Select the streaming service to access"
         wx.StaticText(self.pnl, label=select_instr, pos=(15, 18))
-
+        ###########################################################################################################
         exit_button = wx.Button(self.pnl, label='Exit', pos=(15, 75))  # x=horizontal, y=vertical
         exit_button.Bind(wx.EVT_BUTTON, self.exit)
-
+        ###########################################################################################################
         ok_button = wx.Button(self.pnl, label='OK', pos=(280, 75))
         ok_button.Bind(wx.EVT_BUTTON, self.open_select)
-
+        ###########################################################################################################
         self.Centre()
         self.Show(True)
+        ###########################################################################################################
 
     def exit(self, b):
         self.Close(True)
+        ###########################################################################################################
 
     def open_select(self, event):
+        selected_service = self.service_choice.GetStringSelection()
+        #pub.sendMessage('ok', message=selected_service, listener='ok')
         if self.service_choice.GetStringSelection() == "uStream":
-            self.Destroy()
+            self.Close()
             frame = InterfaceWindow()
             frame.Show()
         elif self.service_choice.GetStringSelection() == "More...":
             wx.MessageBox('Coming Soon!', 'More...', wx.OK | wx.ICON_INFORMATION)
+            ###########################################################################################################
 
-
+###########################################################################################################
+#   Frame for the 'main' interface
+###########################################################################################################
 class InterfaceWindow(wx.Frame):
 
     class InterfaceTop(wx.Panel):
         def __init__(self, parent):
             wx.Panel.__init__(self, parent, size=(1280, 100))
             self.SetBackgroundColour('#241773')
-
+            ###########################################################################################################
             self.search_site = wx.SearchCtrl(self, -1, style=wx.TE_PROCESS_ENTER, name='Search for broadcaster')
             self.search_site.ShowCancelButton(True)
-            self.image_maybe = wx.StaticText(self, -1, "")
             self.image_maybe2 = wx.StaticText(self, -1, "")
-
-            self.png = wx.StaticBitmap(self, -1, wx.Bitmap("uStream_logo.png", wx.BITMAP_TYPE_ANY))
-
+            ###########################################################################################################
+            if 1 == 1:  # ToDo Get the listener running! Replace this with a correct modular approach
+                self.init_ustream()
+            ###########################################################################################################
             xlobox = wx.BoxSizer(wx.HORIZONTAL)
             xlobox.Add(self.png, 19, wx.ALIGN_CENTER)
             xlobox.Add(self.search_site, 50, wx.ALIGN_CENTER)
             xlobox.Add(self.image_maybe2, 10, wx.EXPAND + wx.CENTER)
+            ###########################################################################################################
             self.SetSizer(xlobox)
             self.Layout()
+            ###########################################################################################################
+        def init_ustream(self):
+            if 1 == 1:
+                self.png = wx.StaticBitmap(self, -1,
+                                           wx.Bitmap(su_ustream_front.TopBar.uStream_logo, wx.BITMAP_TYPE_ANY))
+            ###########################################################################################################
 
     class InterfaceSide(wx.Panel):
 
         def __init__(self, parent):
             wx.Panel.__init__(self, parent, size=(200, 668))
             self.SetBackgroundColour('#999999')
-            large_font = wx.Font(16, wx.MODERN, wx.NORMAL, wx.NORMAL, False, u'Verdana')
-            small_font = wx.Font(10, wx.MODERN, wx.NORMAL, wx.NORMAL, False, u'Verdana')
+            ###########################################################################################################
+            pub.subscribe(self.dark_mode, 'dark_mode')
             ###########################################################################################################
             self.menu_tree = wx.TreeCtrl(self, wx.ID_ANY, style=wx.TR_NO_LINES | wx.TR_HAS_BUTTONS)
             self.menu_tree.SetBackgroundColour('#999999')
@@ -72,35 +136,44 @@ class InterfaceWindow(wx.Frame):
             self.menu_root = self.menu_tree.AddRoot('I should be hidden')
             ###########################################################################################################
             self.browse_sub_root = self.menu_tree.AppendItem(self.menu_root, 'Browse')
-            #self.menu_tree.SetItemFont(self.browse_sub_root, small_font)
             for i, text in enumerate(su_ustream_front.SideBar.Browse):
                 self.menu_tree.AppendItem(self.browse_sub_root, text)
             ###########################################################################################################
             self.log_in_sub_root = self.menu_tree.AppendItem(self.menu_root, 'Log-in')
-            #self.menu_tree.SetItemFont(self.log_in_sub_root, small_font)
             for i, text in enumerate(su_ustream_front.SideBar.Log_in):
                 self.menu_tree.AppendItem(self.log_in_sub_root, text)
-
             ###########################################################################################################
             self.options_sub_root = self.menu_tree.AppendItem(self.menu_root, 'Options')
-            #self.menu_tree.SetItemFont(self.options_sub_root, small_font)
             for i, text in enumerate(su_ustream_front.SideBar.Options):
                 self.menu_tree.AppendItem(self.options_sub_root, text)
             ###########################################################################################################
+            self.menu_tree.Bind(wx.EVT_TREE_SEL_CHANGED, self.open_advanced)
+            ###########################################################################################################
             self.change_p_button = wx.Button(self, label='Change Platform')
             self.change_p_button.Bind(wx.EVT_BUTTON, self.return_service_select)
-            ###########################################################################################################
-
             ###########################################################################################################
             xdbox = wx.BoxSizer(wx.VERTICAL)
             xdbox.Add(self.menu_tree, 15, wx.EXPAND)
             xdbox.Add(self.change_p_button, 1, wx.ALIGN_CENTER)
             self.SetSizer(xdbox)
             self.Layout()
+            ###########################################################################################################
 
         def return_service_select(self, event):
             frame = Window()
             frame.Show()
+            InterfaceWindow.close_window(self.Parent)
+
+        def open_advanced(self, event):
+            if self.menu_tree.GetItemText(event.GetItem()) == su_ustream_front.SideBar.Options[2]:
+                #   Check to see if the user clicks 'advanced' and if they do, open a new frame
+                frame = Advanced()
+                frame.Show()
+
+        def dark_mode(self, message):
+            self.SetBackgroundColour(message[1])
+            self.menu_tree.SetBackgroundColour(message[1])
+            self.Refresh()
 
         #def write_text(self):
 
@@ -108,27 +181,47 @@ class InterfaceWindow(wx.Frame):
         def __init__(self, parent):
             wx.Panel.__init__(self, parent, size=(1080, 668))
             self.SetBackgroundColour('#FFFFFF')
+            ###########################################################################################################
+            pub.subscribe(self.dark_mode, 'dark_mode')
+            ###########################################################################################################
+            # ToDo Implement the stream browsing section!
+
+        def dark_mode(self, message):
+            self.SetBackgroundColour(message[0])
+            self.Refresh()
+
 
     def __init__(self):
         wx.Frame.__init__(self, None, title='Streamlink/uStream GUI', size=(1280, 768),
                           style=wx.MINIMIZE_BOX | wx.SYSTEM_MENU | wx.CAPTION | wx.CLOSE_BOX)
-
-        panel1 = InterfaceWindow.InterfaceTop(self)
-        panel2 = InterfaceWindow.InterfaceSide(self)
-        panel3 = InterfaceWindow.InterfaceMain(self)
-
+        ###########################################################################################################
+        self.panel1 = InterfaceWindow.InterfaceTop(self)
+        self.panel2 = InterfaceWindow.InterfaceSide(self)
+        self.panel3 = InterfaceWindow.InterfaceMain(self)
+        ###########################################################################################################
+        #pub.subscribe(self.service_listener, 'ok')
+        ###########################################################################################################
         box = wx.BoxSizer(wx.VERTICAL)
         box2 = wx.BoxSizer(wx.HORIZONTAL)
-        box.Add(panel1, 1, wx.EXPAND)
+        box.Add(self.panel1, 1, wx.EXPAND)
         box.Add(box2, 1, wx.EXPAND)
-        box2.Add(panel2, 1, wx.EXPAND)
-        box2.Add(panel3, 1, wx.EXPAND)
-
+        box2.Add(self.panel2, 1, wx.EXPAND)
+        box2.Add(self.panel3, 1, wx.EXPAND)
+        ###########################################################################################################
         self.SetAutoLayout(True)
         self.SetSizer(box)
         self.Layout()
         self.Show()
         self.Centre(wx.BOTH)
+        ###########################################################################################################
+
+    def close_window(self):
+        self.Destroy()
+
+    #def service_listener(self, message):
+        # Below is unreachable...?
+        # Testing revealed the listener works, however
+        #self.SetLabel(message)
 
 
 def main_serv_select():
