@@ -213,9 +213,32 @@ class InterfaceWindow(wx.Frame):
             ###########################################################################################################
             pub.subscribe(self.dark_mode, 'dark_mode')
             ###########################################################################################################
-            # ToDo Implement the stream browsing section!
+            # ToDo Implement Inheritance for new broadcaster
             ###########################################################################################################
-            
+            self.bs = wx.BoxSizer(wx.VERTICAL)
+            self.gs = wx.GridSizer(2, 3, 5, 5)
+            for i in range(1, 7):
+                #self.gs.Add(wx.Button(self, size=(353, 307)), 0, wx.EXPAND)
+                self.gs.Add(self.BroadcastContainer(self))
+            self.bs.Add(self.gs, wx.EXPAND)
+            self.bs.Add(wx.Button(self, label='Next Page', size=(123, 33)), 0, wx.ALIGN_BOTTOM + wx.ALIGN_RIGHT)
+            self.SetSizer(self.bs)
+            self.gs.Layout()
+            ###########################################################################################################
+
+        class BroadcastContainer(wx.Panel):
+            def __init__(self, parent):
+                wx.Panel.__init__(self, parent, size=(353, 297))
+                self.bs = wx.BoxSizer(wx.VERTICAL)
+                self.bs.Add(wx.StaticText(self, -1, "Title")), wx.EXPAND
+                self.bs.Add(wx.Button(self, size=(353, 240)), 0, wx.ALIGN_CENTER_VERTICAL +
+                            wx.ALIGN_CENTER_HORIZONTAL)
+                self.bs.Add(wx.StaticText(self, -1, "Viewer Count")), wx.EXPAND
+                self.SetSizer(self.bs)
+                # ToDo Add image button instead of button
+                # ToDo Get scraping script running, so it can apply to these
+
+
 
         def dark_mode(self, message):
             self.colour_control()
