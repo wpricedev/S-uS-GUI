@@ -1,6 +1,10 @@
 import wx
 from wx.lib.pubsub import pub   # Inter-frame messaging
 import su_ustream_front     # Settings in another file, specifically for uStream
+import configparser
+config = configparser.ConfigParser()
+config.read('settings.ini')
+
 
 ###########################################################################################################
 #   Frame for the Advanced Settings Window
@@ -10,7 +14,7 @@ class Advanced(wx.Frame):
     class AdvancedPanel(wx.Panel):
         def __init__(self, parent):
             wx.Panel.__init__(self, parent, size=(300, 500))
-            self.SetBackgroundColour('#FFFFFF')
+            self.colour_control()
             ###########################################################################################################
             temp_txt1 = wx.StaticText(self, -1, "")
             temp_txt2 = wx.StaticText(self, -1, "")
@@ -18,7 +22,7 @@ class Advanced(wx.Frame):
             self.dark_mode_txt = wx.StaticText(self, -1, "Dark Mode", style=wx.ALIGN_CENTER_VERTICAL)
             self.dark_mode_checkb = wx.CheckBox(self, label='Enable')
             self.dark_mode_checkb.Bind(wx.EVT_CHECKBOX, self.dark_mode)
-            self.dark_mode_checkb.SetValue(False)
+            self.dark_mode_checkb.SetValue(config.getboolean('dark_mode', 'Status'))
             ###########################################################################################################
             box = wx.BoxSizer(wx.VERTICAL)
             box2 = wx.BoxSizer(wx.HORIZONTAL)
@@ -33,9 +37,24 @@ class Advanced(wx.Frame):
             ###########################################################################################################
 
         def dark_mode(self, event):
-            pub.sendMessage('dark_mode', message=['#333333', '#666666'])
-            self.dark_mode_checkb.SetValue(True)
-            # ToDo Enable saving of settings. Possibly via a file!
+            if self.dark_mode_checkb.GetValue():
+                config.set('dark_mode', 'Status', 'On')
+                self.dark_mode_checkb.SetValue(True)
+                pub.sendMessage('dark_mode', message='On')
+            else:
+                config.set('dark_mode', 'Status', 'Off')
+                self.dark_mode_checkb.SetValue(False)
+                pub.sendMessage('dark_mode', message='Off')
+            with open('settings.ini', 'w') as configfile:
+                config.write(configfile)
+            self.colour_control()
+
+        def colour_control(self):
+            if config.get('dark_mode', 'Status') == 'On':
+                self.SetBackgroundColour(config.get('dark_mode_colours', 'menu'))
+            else:
+                self.SetBackgroundColour(config.get('light_mode_colours', 'menu'))
+            self.Refresh()
 
     def __init__(self):
         wx.Frame.__init__(self, None, -1, title='Advanced Settings', size=(300, 200),
@@ -48,6 +67,7 @@ class Advanced(wx.Frame):
         self.Show()
         self.Centre(wx.BOTH)
         ###########################################################################################################
+
 
 ###########################################################################################################
 #   Frame for the opening dialogue window asking for a service to select
@@ -91,6 +111,7 @@ class Window(wx.Frame):
             wx.MessageBox('Coming Soon!', 'More...', wx.OK | wx.ICON_INFORMATION)
             ###########################################################################################################
 
+
 ###########################################################################################################
 #   Frame for the 'main' interface
 ###########################################################################################################
@@ -116,6 +137,7 @@ class InterfaceWindow(wx.Frame):
             self.SetSizer(xlobox)
             self.Layout()
             ###########################################################################################################
+
         def init_ustream(self):
             if 1 == 1:
                 self.png = wx.StaticBitmap(self, -1,
@@ -126,7 +148,6 @@ class InterfaceWindow(wx.Frame):
 
         def __init__(self, parent):
             wx.Panel.__init__(self, parent, size=(200, 668))
-            self.SetBackgroundColour('#999999')
             ###########################################################################################################
             pub.subscribe(self.dark_mode, 'dark_mode')
             ###########################################################################################################
@@ -134,6 +155,8 @@ class InterfaceWindow(wx.Frame):
             self.menu_tree.SetBackgroundColour('#999999')
             self.menu_tree.SetWindowStyleFlag(wx.NO_BORDER + wx.TR_HIDE_ROOT)
             self.menu_root = self.menu_tree.AddRoot('I should be hidden')
+            ###########################################################################################################
+            self.colour_control()
             ###########################################################################################################
             self.browse_sub_root = self.menu_tree.AppendItem(self.menu_root, 'Browse')
             for i, text in enumerate(su_ustream_front.SideBar.Browse):
@@ -171,25 +194,39 @@ class InterfaceWindow(wx.Frame):
                 frame.Show()
 
         def dark_mode(self, message):
-            self.SetBackgroundColour(message[1])
-            self.menu_tree.SetBackgroundColour(message[1])
-            self.Refresh()
+            self.colour_control()
 
-        #def write_text(self):
+        def colour_control(self):
+            if config.get('dark_mode', 'Status') == 'On':
+                self.SetBackgroundColour(config.get('dark_mode_colours', 'side'))
+                self.menu_tree.SetBackgroundColour(config.get('dark_mode_colours', 'side'))
+                self.Refresh()
+            else:
+                self.SetBackgroundColour(config.get('light_mode_colours', 'side'))
+                self.menu_tree.SetBackgroundColour(config.get('light_mode_colours', 'side'))
+                self.Refresh()
 
     class InterfaceMain(wx.Panel):
         def __init__(self, parent):
             wx.Panel.__init__(self, parent, size=(1080, 668))
-            self.SetBackgroundColour('#FFFFFF')
+            self.colour_control()
             ###########################################################################################################
             pub.subscribe(self.dark_mode, 'dark_mode')
             ###########################################################################################################
             # ToDo Implement the stream browsing section!
+            ###########################################################################################################
+            
 
         def dark_mode(self, message):
-            self.SetBackgroundColour(message[0])
-            self.Refresh()
+            self.colour_control()
 
+        def colour_control(self):
+            if config.get('dark_mode', 'Status') == 'On':
+                self.SetBackgroundColour(config.get('dark_mode_colours', 'main'))
+                self.Refresh()
+            else:
+                self.SetBackgroundColour(config.get('light_mode_colours', 'main'))
+                self.Refresh()
 
     def __init__(self):
         wx.Frame.__init__(self, None, title='Streamlink/uStream GUI', size=(1280, 768),
