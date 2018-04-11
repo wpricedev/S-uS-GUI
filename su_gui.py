@@ -1,9 +1,20 @@
 import wx
 from wx.lib.pubsub import pub   # Inter-frame messaging
 import su_ustream_front     # Settings in another file, specifically for uStream
+import ustream
 import configparser
+import streamlink
+from PIL import Image
+from io import BytesIO
+import requests
+import io
 config = configparser.ConfigParser()
 config.read('settings.ini')
+
+broadcaster_title = []
+broadcaster_viewers = []
+broadcaster_url = []
+broadcaster_thumbnail = []
 
 
 ###########################################################################################################
@@ -213,31 +224,44 @@ class InterfaceWindow(wx.Frame):
             ###########################################################################################################
             pub.subscribe(self.dark_mode, 'dark_mode')
             ###########################################################################################################
-            # ToDo Implement Inheritance for new broadcaster
             ###########################################################################################################
             self.bs = wx.BoxSizer(wx.VERTICAL)
             self.gs = wx.GridSizer(2, 3, 5, 5)
-            for i in range(1, 7):
-                #self.gs.Add(wx.Button(self, size=(353, 307)), 0, wx.EXPAND)
+            self.SetSizer(self.bs)
+            self.gs.Layout()
+            self.set_browse_all()
+            ###########################################################################################################
+
+        @staticmethod
+        def set_blank():
+            i = 1
+
+        def set_browse_all(self):
+            global broadcaster_title, broadcaster_viewers, broadcaster_url, broadcaster_thumbnail
+            broadcaster_title, broadcaster_viewers, broadcaster_url, broadcaster_thumbnail = ustream.BrowseAll.get_info()
+            for i in range(0, 6):
                 self.gs.Add(self.BroadcastContainer(self))
             self.bs.Add(self.gs, wx.EXPAND)
             self.bs.Add(wx.Button(self, label='Next Page', size=(123, 33)), 0, wx.ALIGN_BOTTOM + wx.ALIGN_RIGHT)
-            self.SetSizer(self.bs)
-            self.gs.Layout()
-            ###########################################################################################################
 
         class BroadcastContainer(wx.Panel):
             def __init__(self, parent):
                 wx.Panel.__init__(self, parent, size=(353, 297))
+                global broadcaster_title, broadcaster_viewers, broadcaster_url, broadcaster_thumbnail
                 self.bs = wx.BoxSizer(wx.VERTICAL)
-                self.bs.Add(wx.StaticText(self, -1, "Title")), wx.EXPAND
-                self.bs.Add(wx.Button(self, size=(353, 240)), 0, wx.ALIGN_CENTER_VERTICAL +
-                            wx.ALIGN_CENTER_HORIZONTAL)
-                self.bs.Add(wx.StaticText(self, -1, "Viewer Count")), wx.EXPAND
+                self.bs.Add(wx.StaticText(self, -1, broadcaster_title[0])), wx.EXPAND
+                # img_url = requests.get(broadcaster_thumbnail[0])
+                # img = Image.open(BytesIO(img_url.content))
+                # potato = wx.Image(img, wx.BITMAP_TYPE_ANY)
+                # self.bs.Add(wx.StaticBitmap(self, wx.BitmapFromImage(potato)), 0, wx.ALIGN_CENTER_VERTICAL +
+                #             wx.ALIGN_CENTER_HORIZONTAL)
+                # self.bs.Add(wx.BitmapButton(self, bitmap=img), 0, wx.ALIGN_CENTER_VERTICAL +
+                #             wx.ALIGN_CENTER_HORIZONTAL)
+                # ^Doesn't work, as jpeg is invalid
+                # Note: ctrl+/ to comment blocks of code out
+                # ToDo: Get Image working (convert from jpeg to bitmap, then apply)
+                self.bs.Add(wx.StaticText(self, -1, broadcaster_viewers[0])), wx.EXPAND
                 self.SetSizer(self.bs)
-                # ToDo Add image button instead of button
-                # ToDo Get scraping script running, so it can apply to these
-
 
 
         def dark_mode(self, message):
