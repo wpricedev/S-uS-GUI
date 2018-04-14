@@ -237,8 +237,8 @@ class InterfaceWindow(wx.Frame):
             i = 1
 
         def set_browse_all(self):
-            global broadcaster_title, broadcaster_viewers, broadcaster_url, broadcaster_thumbnail
-            broadcaster_title, broadcaster_viewers, broadcaster_url, broadcaster_thumbnail = ustream.BrowseAll.get_info()
+            #global broadcaster_title, broadcaster_viewers, broadcaster_url, broadcaster_thumbnail
+            #broadcaster_title, broadcaster_viewers, broadcaster_url, broadcaster_thumbnail = ustream.BrowseAll.get_info()
             for i in range(0, 6):
                 self.gs.Add(self.BroadcastContainer(self))
             self.bs.Add(self.gs, wx.EXPAND)
@@ -249,19 +249,21 @@ class InterfaceWindow(wx.Frame):
                 wx.Panel.__init__(self, parent, size=(353, 297))
                 global broadcaster_title, broadcaster_viewers, broadcaster_url, broadcaster_thumbnail
                 self.bs = wx.BoxSizer(wx.VERTICAL)
-                self.bs.Add(wx.StaticText(self, -1, broadcaster_title[0])), wx.EXPAND
-                # img_url = requests.get(broadcaster_thumbnail[0])
-                # img = Image.open(BytesIO(img_url.content))
-                # potato = wx.Image(img, wx.BITMAP_TYPE_ANY)
-                # self.bs.Add(wx.StaticBitmap(self, wx.BitmapFromImage(potato)), 0, wx.ALIGN_CENTER_VERTICAL +
-                #             wx.ALIGN_CENTER_HORIZONTAL)
-                # self.bs.Add(wx.BitmapButton(self, bitmap=img), 0, wx.ALIGN_CENTER_VERTICAL +
-                #             wx.ALIGN_CENTER_HORIZONTAL)
+                self.bs.Add(wx.StaticText(self, -1, "title"))
+                #self.bs.Add(wx.StaticText(self, -1, broadcaster_title[0])), wx.EXPAND
+                thumbnail = wx.Image("thumbnail.png", wx.BITMAP_TYPE_PNG).ConvertToBitmap()
+                thumbnail_sb = wx.StaticBitmap(self, -1, thumbnail)
+                thumbnail_sb.Bind(wx.EVT_LEFT_DOWN, self.on_click)
+                self.bs.Add(thumbnail_sb)
                 # ^Doesn't work, as jpeg is invalid
                 # Note: ctrl+/ to comment blocks of code out
-                # ToDo: Get Image working (convert from jpeg to bitmap, then apply)
-                self.bs.Add(wx.StaticText(self, -1, broadcaster_viewers[0])), wx.EXPAND
+                # ToDo: Find another way of displaying thumbnails, as the PIL + convert method is impossible
+                self.bs.Add(wx.StaticText(self, -1, "viewers"))
+                #self.bs.Add(wx.StaticText(self, -1, broadcaster_viewers[0])), wx.EXPAND
                 self.SetSizer(self.bs)
+
+            def on_click(self, event):
+                print("ok")
 
 
         def dark_mode(self, message):
