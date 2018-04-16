@@ -3,18 +3,18 @@ from wx.lib.pubsub import pub   # Inter-frame messaging
 import su_ustream_front     # Settings in another file, specifically for uStream
 import ustream
 import configparser
-import streamlink
-from PIL import Image
-from io import BytesIO
-import requests
-import io
+from streamlink import Streamlink
 config = configparser.ConfigParser()
 config.read('settings.ini')
 
-broadcaster_title = []
-broadcaster_viewers = []
-broadcaster_url = []
-broadcaster_thumbnail = []
+broadcaster_title = ['0'] * 15
+broadcaster_viewers = ['0'] * 15
+broadcaster_url = ['0'] * 15
+broadcaster_thumbnail = ['0'] * 15
+
+# broadcaster_title = ['x1', 'awd2', 'x3', 'awd4', 'x5', 'mag6', 'nus7', 'oui8', 'ekg9', 'nus10', 'oui11', 'ekg12']
+# broadcaster_viewers = ['9', '82', '9', '82', '9', '123', 'ix', 'oi', 'pho', 'you', 'better', 'work']
+# broadcaster_url = ['9', '82', '9', '82', '9', '123', 'ix', 'oi', 'pho', 'you', 'better', 'work']
 
 
 ###########################################################################################################
@@ -51,11 +51,11 @@ class Advanced(wx.Frame):
             if self.dark_mode_checkb.GetValue():
                 config.set('dark_mode', 'Status', 'On')
                 self.dark_mode_checkb.SetValue(True)
-                pub.sendMessage('dark_mode', message='On')
+                pub.sendMessage('dark_mode', message='On', listener='dark_mode')
             else:
                 config.set('dark_mode', 'Status', 'Off')
                 self.dark_mode_checkb.SetValue(False)
-                pub.sendMessage('dark_mode', message='Off')
+                pub.sendMessage('dark_mode', message='Off', istener='dark_mode')
             with open('settings.ini', 'w') as configfile:
                 config.write(configfile)
             self.colour_control()
@@ -182,6 +182,7 @@ class InterfaceWindow(wx.Frame):
                 self.menu_tree.AppendItem(self.options_sub_root, text)
             ###########################################################################################################
             self.menu_tree.Bind(wx.EVT_TREE_SEL_CHANGED, self.open_advanced)
+            self.menu_tree.Bind(wx.EVT_TREE_SEL_CHANGED, self.open_browse)
             ###########################################################################################################
             self.change_p_button = wx.Button(self, label='Change Platform')
             self.change_p_button.Bind(wx.EVT_BUTTON, self.return_service_select)
@@ -197,6 +198,10 @@ class InterfaceWindow(wx.Frame):
             frame = Window()
             frame.Show()
             InterfaceWindow.close_window(self.Parent)
+
+        def open_browse(self, event):
+            if self.menu_tree.GetItemText(event.GetItem()) == su_ustream_front.SideBar.Browse[1]:
+                pub.sendMessage("set_browse_all", message='set_browse_all')
 
         def open_advanced(self, event):
             if self.menu_tree.GetItemText(event.GetItem()) == su_ustream_front.SideBar.Options[2]:
@@ -222,49 +227,109 @@ class InterfaceWindow(wx.Frame):
             wx.Panel.__init__(self, parent, size=(1080, 668))
             self.colour_control()
             ###########################################################################################################
+            self.broadcaster_data_length = len(broadcaster_title)
+            self.broadcaster_index = 0
+            ###########################################################################################################
             pub.subscribe(self.dark_mode, 'dark_mode')
+            pub.subscribe(self.setup_browse_all, 'set_browse_all')
             ###########################################################################################################
             ###########################################################################################################
             self.bs = wx.BoxSizer(wx.VERTICAL)
+            self.bs2 = wx.BoxSizer(wx.HORIZONTAL)
             self.gs = wx.GridSizer(2, 3, 5, 5)
             self.SetSizer(self.bs)
             self.gs.Layout()
-            self.set_browse_all()
             ###########################################################################################################
+            # self.set_browse_all()
 
-        @staticmethod
-        def set_blank():
-            i = 1
+        def setup_browse_all(self, message):
+            self.init_browse_all()
+            self.set_browse_all()
+
+        def init_browse_all(self):
+            global broadcaster_title, broadcaster_viewers, broadcaster_url, broadcaster_thumbnail
+            broadcaster_title, broadcaster_viewers, broadcaster_url, broadcaster_thumbnail = \
+                ustream.BrowseAll.get_info()
+            self.bs.Add(self.gs, wx.EXPAND)
+
+            self.first_button = wx.Button(self, label='First Page', size=(123, 33))
+            self.bs2.Add(self.first_button, 1, wx.ALIGN_BOTTOM + wx.ALIGN_LEFT)
+            self.first_button.Bind(wx.EVT_BUTTON, self.previous_page)
+
+            self.spacer = wx.StaticText(self, -1, "")
+            self.bs2.Add(self.spacer, 10, wx.EXPAND + wx.CENTER)
+
+            self.next_button = wx.Button(self, label='Next Page', size=(123, 33))
+            self.bs2.Add(self.next_button, 1, wx.ALIGN_BOTTOM + wx.ALIGN_RIGHT)
+            self.next_button.Bind(wx.EVT_BUTTON, self.next_page)
+
+            self.bs.Add(self.bs2, wx.EXPAND)
+            self.SetSizer(self.bs)
 
         def set_browse_all(self):
-            #global broadcaster_title, broadcaster_viewers, broadcaster_url, broadcaster_thumbnail
-            #broadcaster_title, broadcaster_viewers, broadcaster_url, broadcaster_thumbnail = ustream.BrowseAll.get_info()
-            for i in range(0, 6):
-                self.gs.Add(self.BroadcastContainer(self))
-            self.bs.Add(self.gs, wx.EXPAND)
-            self.bs.Add(wx.Button(self, label='Next Page', size=(123, 33)), 0, wx.ALIGN_BOTTOM + wx.ALIGN_RIGHT)
+            global broadcaster_title, broadcaster_viewers, broadcaster_url, broadcaster_thumbnail
+            # print(broadcaster_title[0])
+            # print(broadcaster_viewers[0])
+            # print(broadcaster_url[0])
+            # print(self.broadcaster_data_length)
+            min_a = 0
+            max_a = 6
+            for i in range(min_a, max_a):
+                if self.broadcaster_index >= self.broadcaster_data_length:
+                    1==1
+                    # This 'code' runs when there is nothing else to display. Iterator (i) should always run until 5.
+                else:
+                    self.gs.Add(self.BroadcastContainer(self))
+                    self.broadcaster_index = self.broadcaster_index + 1
+            #print(self.iterator)
+            self.Layout()
+
+        def get_index(self):
+            print(self.broadcaster_index)
+            return self.broadcaster_index
+
+        def next_page(self, event):
+            if self.broadcaster_index != self.broadcaster_data_length:
+                pub.sendMessage("clear_container", message='clear_container')
+                self.SetSizer(self.bs)
+                self.Layout()
+                self.set_browse_all()
+
+        def previous_page(self, event):
+            if self.broadcaster_index > 6:
+                pub.sendMessage("clear_container", message='clear_container')
+                self.broadcaster_index = self.broadcaster_index - self.broadcaster_index
+                self.SetSizer(self.bs)
+                self.Layout()
+                self.set_browse_all()
 
         class BroadcastContainer(wx.Panel):
             def __init__(self, parent):
                 wx.Panel.__init__(self, parent, size=(353, 297))
                 global broadcaster_title, broadcaster_viewers, broadcaster_url, broadcaster_thumbnail
+                pub.subscribe(self.clear_container, 'clear_container')
                 self.bs = wx.BoxSizer(wx.VERTICAL)
-                self.bs.Add(wx.StaticText(self, -1, "title"))
-                #self.bs.Add(wx.StaticText(self, -1, broadcaster_title[0])), wx.EXPAND
-                thumbnail = wx.Image("thumbnail.png", wx.BITMAP_TYPE_PNG).ConvertToBitmap()
-                thumbnail_sb = wx.StaticBitmap(self, -1, thumbnail)
-                thumbnail_sb.Bind(wx.EVT_LEFT_DOWN, self.on_click)
-                self.bs.Add(thumbnail_sb)
-                # ^Doesn't work, as jpeg is invalid
+                #self.bs.Add(wx.StaticText(self, -1, "title"))
+                self.bs.Add(wx.StaticText
+                            (self, -1, broadcaster_title[InterfaceWindow.InterfaceMain.get_index(parent)])), wx.EXPAND
+                self.thumbnail = wx.Image("thumbnail.png", wx.BITMAP_TYPE_PNG).ConvertToBitmap()
+                self.thumbnail_sb = wx.StaticBitmap(self, -1, self.thumbnail)
+                self.thumbnail_sb.Bind(wx.EVT_LEFT_DOWN, self.on_click)
+                self.bs.Add(self.thumbnail_sb)
+                # ^Temporary thumbnail implementation
                 # Note: ctrl+/ to comment blocks of code out
                 # ToDo: Find another way of displaying thumbnails, as the PIL + convert method is impossible
-                self.bs.Add(wx.StaticText(self, -1, "viewers"))
-                #self.bs.Add(wx.StaticText(self, -1, broadcaster_viewers[0])), wx.EXPAND
+                #self.bs.Add(wx.StaticText(self, -1, "viewers"))
+                self.bs.Add(wx.StaticText
+                            (self, -1, broadcaster_viewers[InterfaceWindow.InterfaceMain.get_index(parent)])), wx.EXPAND
                 self.SetSizer(self.bs)
+                self.Layout()
 
             def on_click(self, event):
-                print("ok")
+                print(broadcaster_url[0])
 
+            def clear_container(self, message):
+                self.Destroy()
 
         def dark_mode(self, message):
             self.colour_control()
