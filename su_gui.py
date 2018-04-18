@@ -7,14 +7,14 @@ import os
 config = configparser.ConfigParser()
 config.read('settings.ini')
 
-broadcaster_title = ['0'] * 15
-broadcaster_viewers = ['0'] * 15
-broadcaster_url = ['0'] * 15
-broadcaster_thumbnail = ['0'] * 15
+#broadcaster_title = ['0'] * 15
+#broadcaster_viewers = ['0'] * 15
+#broadcaster_url = ['0'] * 15
+#broadcaster_thumbnail = ['0'] * 15
 
-# broadcaster_title = ['x1', 'awd2', 'x3', 'awd4', 'x5', 'mag6', 'nus7', 'oui8', 'ekg9', 'nus10', 'oui11', 'ekg12']
-# broadcaster_viewers = ['9', '82', '9', '82', '9', '123', 'ix', 'oi', 'pho', 'you', 'better', 'work']
-# broadcaster_url = ['9', '82', '9', '82', '9', '123', 'ix', 'oi', 'pho', 'you', 'better', 'work']
+broadcaster_title = ['x1', 'awd2', 'x3', 'awd4', 'x5', 'mag6', 'nus7', 'oui8', 'ekg9', 'nus10', 'oui11', 'ekg12']
+broadcaster_viewers = ['9', '82', '9', '82', '9', '123', 'ix', 'oi', 'pho', 'you', 'better', 'work']
+broadcaster_url = ['9', '82', '9', '82', '9', '123', 'ix', 'oi', 'pho', 'you', 'better', 'work']
 # ^ Testing lists
 
 
@@ -51,11 +51,11 @@ class Advanced(wx.Frame):
             if self.dark_mode_checkb.GetValue():
                 config.set('dark_mode', 'Status', 'On')
                 self.dark_mode_checkb.SetValue(True)
-                pub.sendMessage('dark_mode', message='On', listener='dark_mode')
+                pub.sendMessage('dark_mode', message='On')
             else:
                 config.set('dark_mode', 'Status', 'Off')
                 self.dark_mode_checkb.SetValue(False)
-                pub.sendMessage('dark_mode', message='Off', istener='dark_mode')
+                pub.sendMessage('dark_mode', message='Off')
             with open('settings.ini', 'w') as configfile:
                 config.write(configfile)
             self.colour_control()
@@ -133,15 +133,22 @@ class InterfaceWindow(wx.Frame):
             ###########################################################################################################
             self.search_site = wx.SearchCtrl(self, -1, style=wx.TE_PROCESS_ENTER, name='Search for broadcaster')
             self.search_site.ShowCancelButton(True)
+            self.search_str_lnk = wx.SearchCtrl(self, -1, style=wx.TE_PROCESS_ENTER, name='Open Broadcaster by URL')
+            self.search_str_lnk.ShowCancelButton(True)
             self.image_maybe2 = wx.StaticText(self, -1, "")
+            self.image_maybe = wx.StaticText(self, -1, "")
             ###########################################################################################################
             if 1 == 1:  # ToDo Get the listener running! Replace this with a correct modular approach
                 self.init_ustream()
             ###########################################################################################################
             xlobox = wx.BoxSizer(wx.HORIZONTAL)
             xlobox.Add(self.png, 19, wx.ALIGN_CENTER)
-            xlobox.Add(self.search_site, 50, wx.ALIGN_CENTER)
-            xlobox.Add(self.image_maybe2, 10, wx.EXPAND + wx.CENTER)
+            xlobox.Add(self.search_site, 25, wx.ALIGN_CENTER)
+            xlobox.Add(self.image_maybe, 5, wx.EXPAND + wx.CENTER)
+            xlobox.Add(self.search_str_lnk, 25, wx.ALIGN_CENTER)
+            xlobox.Add(self.image_maybe2, 5, wx.EXPAND + wx.CENTER)
+            # Todo: Currently the search bars are vague. Find a way, like a label, to distinguish the two
+            # Todo: Implement search bars
             ###########################################################################################################
             self.SetSizer(xlobox)
             self.Layout()
@@ -179,8 +186,7 @@ class InterfaceWindow(wx.Frame):
             for i, text in enumerate(su_ustream_front.SideBar.Options):
                 self.menu_tree.AppendItem(self.options_sub_root, text)
             ###########################################################################################################
-            self.menu_tree.Bind(wx.EVT_TREE_SEL_CHANGED, self.open_advanced)
-            self.menu_tree.Bind(wx.EVT_TREE_SEL_CHANGED, self.open_browse)
+            self.menu_tree.Bind(wx.EVT_TREE_SEL_CHANGED, self.open_selected)
             ###########################################################################################################
             self.change_p_button = wx.Button(self, label='Change Platform')
             self.change_p_button.Bind(wx.EVT_BUTTON, self.return_service_select)
@@ -197,15 +203,13 @@ class InterfaceWindow(wx.Frame):
             frame.Show()
             InterfaceWindow.close_window(self.Parent)
 
-        def open_browse(self, event):
-            if self.menu_tree.GetItemText(event.GetItem()) == su_ustream_front.SideBar.Browse[1]:
-                pub.sendMessage("set_browse_all", message='set_browse_all')
-
-        def open_advanced(self, event):
+        def open_selected(self, event):
             if self.menu_tree.GetItemText(event.GetItem()) == su_ustream_front.SideBar.Options[2]:
                 #   Check to see if the user clicks 'advanced' and if they do, open a new frame
                 frame = Advanced()
                 frame.Show()
+            elif self.menu_tree.GetItemText(event.GetItem()) == su_ustream_front.SideBar.Browse[1]:
+                pub.sendMessage("setup_browse_all", message='setup_browse_all')
 
         def dark_mode(self, message):
             self.colour_control()
@@ -228,9 +232,10 @@ class InterfaceWindow(wx.Frame):
                 ###########################################################################################################
                 self.broadcaster_data_length = len(broadcaster_title)
                 self.broadcaster_index = 0
+                self.page_in_use = 0
                 ###########################################################################################################
                 pub.subscribe(self.dark_mode, 'dark_mode')
-                pub.subscribe(self.setup_browse_all, 'set_browse_all')
+                pub.subscribe(self.setup_browse_all, 'setup_browse_all')
                 ###########################################################################################################
                 ###########################################################################################################
                 self.bs = wx.BoxSizer(wx.VERTICAL)
@@ -242,14 +247,28 @@ class InterfaceWindow(wx.Frame):
                 # self.set_browse_all()
 
             def setup_browse_all(self, message):
+                self.reset_browse_area()
                 self.init_browse_all()
                 self.set_browse_all()
 
+            def reset_browse_area(self):
+                if self.page_in_use == 1:
+                    self.page_in_use = 0
+                    self.broadcaster_index = 0
+                    pub.sendMessage("clear_container", message='clear_container')
+                    self.first_button.Destroy()
+                    self.spacer.Destroy()
+                    self.next_button.Destroy()
+                    self.Refresh()
+                    self.Layout()
+                    # ToDo: Look over this section again. Once called, nothing will be displayed.
+
             def init_browse_all(self):
                 global broadcaster_title, broadcaster_viewers, broadcaster_url, broadcaster_thumbnail
-                broadcaster_title, broadcaster_viewers, broadcaster_url, broadcaster_thumbnail = \
-                    ustream.BrowseAll.get_info()
+                # broadcaster_title, broadcaster_viewers, broadcaster_url, broadcaster_thumbnail = \
+                #     ustream.BrowseAll.get_info()
                 self.bs.Add(self.gs, wx.EXPAND)
+                self.page_in_use = 1
 
                 self.first_button = wx.Button(self, label='First Page', size=(123, 33))
                 self.bs2.Add(self.first_button, 1, wx.ALIGN_BOTTOM + wx.ALIGN_LEFT)
@@ -280,11 +299,9 @@ class InterfaceWindow(wx.Frame):
                     else:
                         self.gs.Add(self.BroadcastContainer(self))
                         self.broadcaster_index = self.broadcaster_index + 1
-                #print(self.iterator)
                 self.Layout()
 
             def get_index(self):
-                print(self.broadcaster_index)
                 return self.broadcaster_index
 
             def next_page(self, event):
