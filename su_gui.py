@@ -4,20 +4,24 @@ import su_ustream_front     # Settings in another file, specifically for uStream
 import ustream
 import configparser
 import os
-import re
 
 config = configparser.ConfigParser()
 config.read('settings.ini')
 
-broadcaster_title = ['0'] * 15
-broadcaster_viewers = ['0'] * 15
-broadcaster_url = ['0'] * 15
-broadcaster_thumbnail = ['0'] * 15
+# broadcaster_title = ['0'] * 15
+# broadcaster_viewers = ['0'] * 15
+# broadcaster_url = ['0'] * 15
+# broadcaster_thumbnail = ['0'] * 15
+# Max length can be 15 (sometimes 16 (i don't know why))
+# Otherwise list index out of range. This is exclusive to the returned data.
 
-# broadcaster_title = ['x1', 'awd2', 'x3', 'awd4', 'x5', 'mag6', 'nus7', 'oui8', 'ekg9', 'nus10', 'oui11', 'ekg12']
-# broadcaster_viewers = ['9', '82', '9', '82', '9', '123', 'ix', 'oi', 'pho', 'you', 'better', 'work']
-# broadcaster_url = ['9', '82', '9', '82', '9', '123', 'ix', 'oi', 'pho', 'you', 'better', 'work']
-# ^ Testing lists
+broadcaster_title = ['x1', 'awd2', 'x3', 'awd4', 'x5', 'mag6', 'nus7', 'oui8', 'ekg9', 'nus10', 'oui11', 'ekg12',
+                     'lmao13', 'lmao14', 'lmao15' ,'lmao16', 'lmao17', 'lmao18', 'lmao19', 'lmao20']
+broadcaster_viewers = ['9', '82', '9', '82', '9', '123', 'ix', 'oi', 'pho', 'you', 'better', 'work',
+                       '9', '82', '9', '82', '9', '123', 'ix', 'oi', 'pho', 'you']
+broadcaster_url = ['9', '82', '9', '82', '9', '123', 'ix', 'oi', 'pho', 'you', 'better', 'work',
+                       '9', '82', '9', '82', '9', '123', 'ix', 'oi', 'pho', 'you']
+# ^ Testing lists. Works up to 20, unlike 'live list'
 
 
 ###########################################################################################################
@@ -236,15 +240,66 @@ class InterfaceWindow(wx.Frame):
     class InterfaceMain(wx.Panel):
         def __init__(self, parent):
             wx.Panel.__init__(self, parent, size=(1080, 668))
+            self.init_ui()
+
+        def show_profile(self, message):
+            # ToDo: Assign Variables here
+            # ToDo: Re-assign widgets so refresh of page can be possible
+            print(message)
+
+            self.bs.Add((0, 5))
+            note = "Title"
+            self.kia = wx.StaticText(self, label=note, style=wx.ALIGN_CENTRE)
+            self.kia.Wrap(700)
+            self.bs.Add(self.kia, 1, wx.EXPAND)
+
+            self.bs.Add((0, 5))
+
+            note = "Paragraph long text"
+            self.kia = wx.StaticText(self, label=note, style=wx.ALIGN_CENTRE)
+            self.kia.Wrap(700)
+            self.bs.Add(self.kia, 1, wx.EXPAND)
+
+            self.bs.Add((0, 5))
+
+            self.img = wx.Image("thumbnail2.png", wx.BITMAP_TYPE_PNG).ConvertToBitmap()
+            self.preview_image = wx.StaticBitmap(self, -1, self.img)
+            self.bs.Add(self.preview_image, wx.ALIGN_CENTER_HORIZONTAL)
+
+
+            self.open_current_stream = wx.Button(self, label='Play Live Stream', size=(175, 33))
+            self.bs2.Add(self.open_current_stream, 1, wx.ALIGN_BOTTOM)
+            self.open_current_stream.Bind(wx.EVT_BUTTON, self.previous_page)
+
+            self.spacer = wx.StaticText(self, -1, "")
+            self.bs2.Add(self.spacer, 10, wx.EXPAND)
+
+            self.open_vod_list = wx.Button(self, label='View VoDs', size=(175, 33))
+            self.bs2.Add(self.open_vod_list, 1, wx.ALIGN_BOTTOM)
+            self.open_vod_list.Bind(wx.EVT_BUTTON, self.previous_page)
+
+            self.spacer2 = wx.StaticText(self, -1, "")
+            self.bs2.Add(self.spacer2, 10, wx.EXPAND)
+
+            self.open_related = wx.Button(self, label='Show Related Channels', size=(175, 33))
+            self.bs2.Add(self.open_related, 1, wx.ALIGN_BOTTOM)
+            self.open_related.Bind(wx.EVT_BUTTON, self.previous_page)
+            self.bs.Add(self.bs2)
+
+            self.SetSizer(self.bs)
+            self.Layout()
+
+        def init_ui(self):
             self.colour_control()
             ###########################################################################################################
             self.broadcaster_data_length = len(broadcaster_title)
-            print(self.broadcaster_data_length)
             self.broadcaster_index = 0
             self.page_in_use = 0
             ###########################################################################################################
             pub.subscribe(self.dark_mode, 'dark_mode')
             pub.subscribe(self.setup_browse_all, 'setup_browse_all')
+            pub.subscribe(self.reset_browse_area, 'reset_browse_area')
+            pub.subscribe(self.show_profile, 'show_profile')
             ###########################################################################################################
             ###########################################################################################################
             self.bs = wx.BoxSizer(wx.VERTICAL)
@@ -258,9 +313,8 @@ class InterfaceWindow(wx.Frame):
         def setup_browse_all(self, message):
             global broadcaster_title, broadcaster_viewers, broadcaster_url, broadcaster_thumbnail
             try:
-                broadcaster_title, broadcaster_viewers, broadcaster_url, broadcaster_thumbnail = \
-                    ustream.BrowseAll.get_info()
-                print(broadcaster_title[0])
+                # broadcaster_title, broadcaster_viewers, broadcaster_url, broadcaster_thumbnail = \
+                #     ustream.BrowseAll.get_info()
                 self.reset_browse_area()
                 self.init_browse_all()
                 self.set_browse_all()
@@ -272,13 +326,8 @@ class InterfaceWindow(wx.Frame):
             if self.page_in_use == 1:
                 self.page_in_use = 0
                 self.broadcaster_index = 0
-                pub.sendMessage("clear_container", message='clear_container')
-                self.first_button.Destroy()
-                self.spacer.Destroy()
-                self.next_button.Destroy()
-                self.Refresh()
-                self.Layout()
-                # ToDo: Look over this section again. Once called, nothing will be displayed.
+                self.DestroyChildren()
+                self.init_ui()
 
         def init_browse_all(self):
             self.bs.Add(self.gs, wx.EXPAND)
@@ -340,13 +389,16 @@ class InterfaceWindow(wx.Frame):
                 pub.subscribe(self.clear_container, 'clear_container')
                 self.bs = wx.BoxSizer(wx.VERTICAL)
                 # self.bs.Add(wx.StaticText(self, -1, "title"))
-                self.bs.Add(wx.StaticText
-                            (self, -1, broadcaster_title[InterfaceWindow.InterfaceMain.get_index(parent)])), wx.EXPAND
-                self.thumbnail = wx.Image("thumbnail.png", wx.BITMAP_TYPE_PNG).ConvertToBitmap()
 
+                self.title = wx.StaticText(self, -1, broadcaster_title[InterfaceWindow.InterfaceMain.get_index(parent)])
+                self.title.name = broadcaster_url[InterfaceWindow.InterfaceMain.get_index(parent)]
+                self.bs.Add(self.title), wx.EXPAND
+                self.title.Bind(wx.EVT_LEFT_DOWN, self.on_click_title)
+
+                self.thumbnail = wx.Image("thumbnail.png", wx.BITMAP_TYPE_PNG).ConvertToBitmap()
                 self.thumbnail_sb = wx.StaticBitmap(self, -1, self.thumbnail, name="Invis")
                 self.thumbnail_sb.name = broadcaster_url[InterfaceWindow.InterfaceMain.get_index(parent)]
-                self.thumbnail_sb.Bind(wx.EVT_LEFT_DOWN, self.on_click)
+                self.thumbnail_sb.Bind(wx.EVT_LEFT_DOWN, self.on_click_thumbnail)
                 self.bs.Add(self.thumbnail_sb)
                 # ^Temporary thumbnail implementation
                 # Note: ctrl+/ to comment blocks of code out
@@ -358,10 +410,16 @@ class InterfaceWindow(wx.Frame):
                 self.Layout()
 
             @staticmethod
-            def on_click(event):
+            def on_click_thumbnail(event):
                 name = event.GetEventObject().name
                 script = "streamlink " + name + " best"
                 os.system(script)
+
+            @staticmethod
+            def on_click_title(event):
+                message = event.GetEventObject().name
+                pub.sendMessage("reset_browse_area")
+                pub.sendMessage("show_profile", message=message)
 
             def clear_container(self, message):
                 self.Destroy()
