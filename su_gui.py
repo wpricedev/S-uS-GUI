@@ -8,19 +8,18 @@ import os
 config = configparser.ConfigParser()
 config.read('settings.ini')
 
-# broadcaster_title = ['0'] * 15
-# broadcaster_viewers = ['0'] * 15
-# broadcaster_url = ['0'] * 15
-# broadcaster_thumbnail = ['0'] * 15
-# Max length can be 15 (sometimes 16 (i don't know why))
-# Otherwise list index out of range. This is exclusive to the returned data.
+broadcaster_title = ['0'] * 14
+broadcaster_viewers = ['0'] * 14
+broadcaster_url = ['0'] * 14
+broadcaster_thumbnail = ['0'] * 14
+# Max length is unstable due to the headless-browser returning between 14-20 results per page, dependent on page.
 
-broadcaster_title = ['x1', 'awd2', 'x3', 'awd4', 'x5', 'mag6', 'nus7', 'oui8', 'ekg9', 'nus10', 'oui11', 'ekg12',
-                     'lmao13', 'lmao14', 'lmao15' ,'lmao16', 'lmao17', 'lmao18', 'lmao19', 'lmao20']
-broadcaster_viewers = ['9', '82', '9', '82', '9', '123', 'ix', 'oi', 'pho', 'you', 'better', 'work',
-                       '9', '82', '9', '82', '9', '123', 'ix', 'oi', 'pho', 'you']
-broadcaster_url = ['9', '82', '9', '82', '9', '123', 'ix', 'oi', 'pho', 'you', 'better', 'work',
-                       '9', '82', '9', '82', '9', '123', 'ix', 'oi', 'pho', 'you']
+# broadcaster_title = ['x1', 'awd2', 'x3', 'awd4', 'x5', 'mag6', 'nus7', 'oui8', 'ekg9', 'nus10', 'oui11', 'ekg12',
+#                      'lmao13', 'lmao14', 'lmao15' ,'lmao16', 'lmao17', 'lmao18', 'lmao19', 'lmao20']
+# broadcaster_viewers = ['9', '82', '9', '82', '9', '123', 'ix', 'oi', 'pho', 'you', 'better', 'work',
+#                        '9', '82', '9', '82', '9', '123', 'ix', 'oi', 'pho', 'you']
+# broadcaster_url = ['9', '82', '9', '82', '9', '123', 'ix', 'oi', 'pho', 'you', 'better', 'work',
+#                        '9', '82', '9', '82', '9', '123', 'ix', 'oi', 'pho', 'you']
 # ^ Testing lists. Works up to 20, unlike 'live list'
 
 
@@ -139,6 +138,7 @@ class InterfaceWindow(wx.Frame):
             ###########################################################################################################
             self.search_site = wx.SearchCtrl(self, -1, style=wx.TE_PROCESS_ENTER, name='Search for broadcaster')
             self.search_site.SetDescriptiveText(text='Search uStream')
+            self.search_site.Bind(wx.EVT_TEXT_ENTER, self.search_ustream)
             self.search_site.ShowCancelButton(True)
             self.search_str_lnk = wx.SearchCtrl(self, -1, style=wx.TE_PROCESS_ENTER, name='Open Broadcaster by URL')
             self.search_str_lnk.SetDescriptiveText(text='Enter URL to Open Stream')
@@ -166,6 +166,11 @@ class InterfaceWindow(wx.Frame):
         def open_manual_url(self, event):
             os.system("streamlink " + self.search_str_lnk.GetValue() + " best")
             # ToDo: Return errors from Streamlink appropriately
+
+        def search_ustream(self, event):
+            wx.MessageBox('uStream Search bar is unavailable.', 'Search Unavailable',
+                          wx.OK | wx.ICON_INFORMATION)
+            # Search bar on uStream has...gone missing. There appears to remnants of it within the HTML however.
 
         def init_ustream(self):
             if 1 == 1:
@@ -217,12 +222,36 @@ class InterfaceWindow(wx.Frame):
             InterfaceWindow.close_window(self.Parent)
 
         def open_selected(self, event):
-            if self.menu_tree.GetItemText(event.GetItem()) == su_ustream_front.SideBar.Options[2]:
+            if self.menu_tree.GetItemText(event.GetItem()) == su_ustream_front.SideBar.Browse[0]:
+                pub.sendMessage("setup_browse_upcoming", message="http://www.ustream.tv/upcoming")
+            elif self.menu_tree.GetItemText(event.GetItem()) == su_ustream_front.SideBar.Browse[1]:
+                pub.sendMessage("setup_browse_all", message="http://www.ustream.tv/explore/all")
+            elif self.menu_tree.GetItemText(event.GetItem()) == su_ustream_front.SideBar.Browse[2]:
+                pub.sendMessage("setup_browse_all", message="http://www.ustream.tv/explore/news/all?type=live")
+            elif self.menu_tree.GetItemText(event.GetItem()) == su_ustream_front.SideBar.Browse[3]:
+                pub.sendMessage("setup_browse_all", message="http://www.ustream.tv/explore/gaming/all?type=live")
+            elif self.menu_tree.GetItemText(event.GetItem()) == su_ustream_front.SideBar.Browse[4]:
+                pub.sendMessage("setup_browse_all", message="http://www.ustream.tv/explore/entertainment/all?type=live")
+            elif self.menu_tree.GetItemText(event.GetItem()) == su_ustream_front.SideBar.Browse[5]:
+                pub.sendMessage("setup_browse_all", message="http://www.ustream.tv/explore/sports/all?type=live")
+            elif self.menu_tree.GetItemText(event.GetItem()) == su_ustream_front.SideBar.Browse[6]:
+                pub.sendMessage("setup_browse_all", message="http://www.ustream.tv/explore/animals/all?type=live")
+            elif self.menu_tree.GetItemText(event.GetItem()) == su_ustream_front.SideBar.Browse[7]:
+                pub.sendMessage("setup_browse_all", message="http://www.ustream.tv/explore/music/all?type=live")
+            elif self.menu_tree.GetItemText(event.GetItem()) == su_ustream_front.SideBar.Browse[8]:
+                pub.sendMessage("setup_browse_all", message="http://www.ustream.tv/explore/technology/all?type=live")
+            elif self.menu_tree.GetItemText(event.GetItem()) == su_ustream_front.SideBar.Browse[9]:
+                pub.sendMessage("setup_browse_all", message="http://www.ustream.tv/explore/education/all?type=live")
+            elif self.menu_tree.GetItemText(event.GetItem()) == su_ustream_front.SideBar.Log_in[0]:
+                pub.sendMessage("log_in")
+            elif self.menu_tree.GetItemText(event.GetItem()) == su_ustream_front.SideBar.Log_in[1]:
+                pub.sendMessage("log_in")
+            elif self.menu_tree.GetItemText(event.GetItem()) == su_ustream_front.SideBar.Log_in[2]:
+                pub.sendMessage("log_in")
+            elif self.menu_tree.GetItemText(event.GetItem()) == su_ustream_front.SideBar.Options[0]:
                 #   Check to see if the user clicks 'advanced' and if they do, open a new frame
                 frame = Advanced()
                 frame.Show()
-            elif self.menu_tree.GetItemText(event.GetItem()) == su_ustream_front.SideBar.Browse[1]:
-                pub.sendMessage("setup_browse_all", message='setup_browse_all')
 
         def dark_mode(self, message):
             self.colour_control()
@@ -242,30 +271,27 @@ class InterfaceWindow(wx.Frame):
             wx.Panel.__init__(self, parent, size=(1080, 668))
             self.init_ui()
 
+        def setup_profile(self, url):
+            url = "http://" + url
+            self.broadcaster_profile_title, self.broadcaster_profile_description = ustream.ViewProfile.get_info(url)
+
         def show_profile(self, message):
             # ToDo: Assign Variables here
             # ToDo: Re-assign widgets so refresh of page can be possible
-            print(message)
+            self.setup_profile(message)
 
             self.bs.Add((0, 5))
-            note = "Title"
-            self.kia = wx.StaticText(self, label=note, style=wx.ALIGN_CENTRE)
+            self.xyz = wx.StaticText(self, label=self.broadcaster_profile_title, style=wx.ALIGN_CENTRE)
+            self.xyz.Wrap(700)
+            self.bs.Add(self.xyz, 1, wx.EXPAND)
+
+            self.bs.Add((0, 5))
+
+            self.kia = wx.StaticText(self, label=self.broadcaster_profile_description, style=wx.ALIGN_CENTRE)
             self.kia.Wrap(700)
             self.bs.Add(self.kia, 1, wx.EXPAND)
 
             self.bs.Add((0, 5))
-
-            note = "Paragraph long text"
-            self.kia = wx.StaticText(self, label=note, style=wx.ALIGN_CENTRE)
-            self.kia.Wrap(700)
-            self.bs.Add(self.kia, 1, wx.EXPAND)
-
-            self.bs.Add((0, 5))
-
-            self.img = wx.Image("thumbnail2.png", wx.BITMAP_TYPE_PNG).ConvertToBitmap()
-            self.preview_image = wx.StaticBitmap(self, -1, self.img)
-            self.bs.Add(self.preview_image, wx.ALIGN_CENTER_HORIZONTAL)
-
 
             self.open_current_stream = wx.Button(self, label='Play Live Stream', size=(175, 33))
             self.bs2.Add(self.open_current_stream, 1, wx.ALIGN_BOTTOM)
@@ -292,14 +318,22 @@ class InterfaceWindow(wx.Frame):
         def init_ui(self):
             self.colour_control()
             ###########################################################################################################
-            self.broadcaster_data_length = len(broadcaster_title)
+            # self.broadcaster_data_length = len(broadcaster_title)
+            # ^ Not usable as scraper returning anomalyous amounts of data
+            # v Use this as a reference point instead as it is the most consistent max length
+            self.broadcaster_data_lenngth_custom = 14
             self.broadcaster_index = 0
             self.page_in_use = 0
+            self.broadcaster_profile_title = ""
+            self.broadcaster_profile_description = ""
+            self.broadcaster_profile_url = ""
             ###########################################################################################################
             pub.subscribe(self.dark_mode, 'dark_mode')
             pub.subscribe(self.setup_browse_all, 'setup_browse_all')
+            pub.subscribe(self.setup_browse_upcoming, 'setup_browse_upcoming')
             pub.subscribe(self.reset_browse_area, 'reset_browse_area')
             pub.subscribe(self.show_profile, 'show_profile')
+            pub.subscribe(self.log_in, 'log_in')
             ###########################################################################################################
             ###########################################################################################################
             self.bs = wx.BoxSizer(wx.VERTICAL)
@@ -307,27 +341,47 @@ class InterfaceWindow(wx.Frame):
             self.gs = wx.GridSizer(2, 3, 5, 5)
             self.SetSizer(self.bs)
             self.gs.Layout()
-            ###########################################################################################################
-            # self.set_browse_all()
+
+        @staticmethod
+        def log_in():
+            wx.MessageBox('Not Available for this service.', 'Not Available',
+                          wx.OK | wx.ICON_INFORMATION)
+
+        def setup_browse_upcoming(self, message):
+            global broadcaster_title, broadcaster_viewers, broadcaster_url, broadcaster_thumbnail
+            try:
+                broadcaster_title, broadcaster_viewers, broadcaster_url, broadcaster_thumbnail = \
+                    ustream.BrowseUpcoming.get_info(message)
+                self.reset_browse_area()
+                self.init_browse_upcoming()
+                self.set_browse_all()
+            except IndexError:
+                wx.MessageBox('Unable to Obtain uStream Data. Please try again or restart the application.', 'Error: 1',
+                              wx.OK | wx.ICON_INFORMATION)
+                self.reset_browse_area()
 
         def setup_browse_all(self, message):
             global broadcaster_title, broadcaster_viewers, broadcaster_url, broadcaster_thumbnail
             try:
-                # broadcaster_title, broadcaster_viewers, broadcaster_url, broadcaster_thumbnail = \
-                #     ustream.BrowseAll.get_info()
+                broadcaster_title, broadcaster_viewers, broadcaster_url, broadcaster_thumbnail = \
+                    ustream.BrowseAll.get_info(message)
                 self.reset_browse_area()
                 self.init_browse_all()
                 self.set_browse_all()
             except IndexError:
                 wx.MessageBox('Unable to Obtain uStream Data. Please try again or restart the application.', 'Error: 1',
                               wx.OK | wx.ICON_INFORMATION)
+                self.reset_browse_area()
 
         def reset_browse_area(self):
             if self.page_in_use == 1:
-                self.page_in_use = 0
-                self.broadcaster_index = 0
                 self.DestroyChildren()
                 self.init_ui()
+
+        def init_browse_upcoming(self):
+            self.bs.Add(self.gs, wx.EXPAND)
+            self.page_in_use = 1
+            self.SetSizer(self.bs)
 
         def init_browse_all(self):
             self.bs.Add(self.gs, wx.EXPAND)
@@ -349,15 +403,11 @@ class InterfaceWindow(wx.Frame):
 
         def set_browse_all(self):
             global broadcaster_title, broadcaster_viewers, broadcaster_url, broadcaster_thumbnail
-            # print(broadcaster_title[0])
-            # print(broadcaster_viewers[0])
-            # print(broadcaster_url[0])
-            # print(self.broadcaster_data_length)
             min_a = 0
             max_a = 6
             for i in range(min_a, max_a):
-                if self.broadcaster_index >= self.broadcaster_data_length:
-                    xyz = 1
+                if self.broadcaster_index >= self.broadcaster_data_lenngth_custom:
+                    break
                     # This 'code' runs when there is nothing else to display. Iterator (i) should always run until 5.
                 else:
                     self.gs.Add(self.BroadcastContainer(self))
@@ -368,7 +418,7 @@ class InterfaceWindow(wx.Frame):
             return self.broadcaster_index
 
         def next_page(self, event):
-            if self.broadcaster_index != self.broadcaster_data_length:
+            if self.broadcaster_index != self.broadcaster_data_lenngth_custom:
                 pub.sendMessage("clear_container", message='clear_container')
                 self.SetSizer(self.bs)
                 self.Layout()
@@ -390,7 +440,8 @@ class InterfaceWindow(wx.Frame):
                 self.bs = wx.BoxSizer(wx.VERTICAL)
                 # self.bs.Add(wx.StaticText(self, -1, "title"))
 
-                self.title = wx.StaticText(self, -1, broadcaster_title[InterfaceWindow.InterfaceMain.get_index(parent)])
+                self.title = wx.StaticText(self, -1, broadcaster_title[InterfaceWindow.InterfaceMain.get_index(parent)],
+                                           style=wx.ALIGN_CENTRE)
                 self.title.name = broadcaster_url[InterfaceWindow.InterfaceMain.get_index(parent)]
                 self.bs.Add(self.title), wx.EXPAND
                 self.title.Bind(wx.EVT_LEFT_DOWN, self.on_click_title)
@@ -404,8 +455,8 @@ class InterfaceWindow(wx.Frame):
                 # Note: ctrl+/ to comment blocks of code out
                 # ToDo: Find another way of displaying thumbnails, as the PIL + convert method is impossible
                 # self.bs.Add(wx.StaticText(self, -1, "viewers"))
-                self.bs.Add(wx.StaticText
-                            (self, -1, broadcaster_viewers[InterfaceWindow.InterfaceMain.get_index(parent)])), wx.EXPAND
+                self.bs.Add(wx.StaticText(self, -1, broadcaster_viewers[InterfaceWindow.InterfaceMain.get_index(parent)],
+                                          style=wx.ALIGN_CENTRE))
                 self.SetSizer(self.bs)
                 self.Layout()
 
