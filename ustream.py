@@ -4,7 +4,6 @@ import bs4 as BeautifulSoup
 #########################################################################################################
 # Set up selenium for virtual browsing, thus enabling us to look at the lists
 #########################################################################################################
-# ToDo: Create script for profile page
 # ToDo: Figure out a way of scrolling/clicking the 'load more' button
 
 class SetUpPageSearch:

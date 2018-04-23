@@ -1,5 +1,6 @@
 import wx
 from wx.lib.pubsub import pub   # Inter-frame messaging
+import urllib.request
 import su_ustream_front     # Settings in another file, specifically for uStream
 import ustream
 import configparser
@@ -8,19 +9,10 @@ import os
 config = configparser.ConfigParser()
 config.read('settings.ini')
 
-broadcaster_title = ['0'] * 14
-broadcaster_viewers = ['0'] * 14
-broadcaster_url = ['0'] * 14
-broadcaster_thumbnail = ['0'] * 14
-# Max length is unstable due to the headless-browser returning between 14-20 results per page, dependent on page.
-
-# broadcaster_title = ['x1', 'awd2', 'x3', 'awd4', 'x5', 'mag6', 'nus7', 'oui8', 'ekg9', 'nus10', 'oui11', 'ekg12',
-#                      'lmao13', 'lmao14', 'lmao15' ,'lmao16', 'lmao17', 'lmao18', 'lmao19', 'lmao20']
-# broadcaster_viewers = ['9', '82', '9', '82', '9', '123', 'ix', 'oi', 'pho', 'you', 'better', 'work',
-#                        '9', '82', '9', '82', '9', '123', 'ix', 'oi', 'pho', 'you']
-# broadcaster_url = ['9', '82', '9', '82', '9', '123', 'ix', 'oi', 'pho', 'you', 'better', 'work',
-#                        '9', '82', '9', '82', '9', '123', 'ix', 'oi', 'pho', 'you']
-# ^ Testing lists. Works up to 20, unlike 'live list'
+broadcaster_title = ['0'] * 20
+broadcaster_viewers = ['0'] * 20
+broadcaster_url = ['0'] * 20
+broadcaster_thumbnail = ['0'] * 20
 
 
 ###########################################################################################################
@@ -35,22 +27,49 @@ class Advanced(wx.Frame):
             ###########################################################################################################
             temp_txt1 = wx.StaticText(self, -1, "")
             temp_txt2 = wx.StaticText(self, -1, "")
+
+            temp_txt3 = wx.StaticText(self, -1, "")
+            temp_txt4 = wx.StaticText(self, -1, "")
+            quality_choices = ['Best', 'Worst']
+
             self.dark_mode_txt = wx.StaticText(self, -1, "Dark Mode", style=wx.ALIGN_CENTER_VERTICAL)
             self.dark_mode_checkb = wx.CheckBox(self, label='Enable')
             self.dark_mode_checkb.Bind(wx.EVT_CHECKBOX, self.dark_mode)
             self.dark_mode_checkb.SetValue(config.getboolean('dark_mode', 'Status'))
+            self.service_text = wx.StaticText(self, -1, "Video Quality", style=wx.ALIGN_CENTER_VERTICAL)
+            self.service_choice = wx.Choice(self, choices=quality_choices)
+            self.service_choice.Bind(wx.EVT_CHOICE, self.update_quality)
+            self.service_choice.SetSelection(-1)
             ###########################################################################################################
             box = wx.BoxSizer(wx.VERTICAL)
             box2 = wx.BoxSizer(wx.HORIZONTAL)
+            box3 = wx.BoxSizer(wx.HORIZONTAL)
             box.Add(box2, 1, wx.EXPAND)
+            box.Add(box3, 1, wx.EXPAND)
+            ###########################################################################################################
             box2.Add(temp_txt1, 20)
             box2.Add(self.dark_mode_txt, 40)
             box2.Add(self.dark_mode_checkb, 20)
             box2.Add(temp_txt2, 20)
             ###########################################################################################################
+            box3.Add(temp_txt3, 10)
+            box3.Add(self.service_text, 20)
+            box3.Add(self.service_choice, 40)
+            box3.Add(temp_txt4, 5)
+            #ToDo: Fix/Redo layout
+            ###########################################################################################################
             self.SetSizer(box)
+            box.Fit(self)
             self.Layout()
             ###########################################################################################################
+
+        def update_quality(self, event):
+            if self.service_choice.GetStringSelection() == "Best":
+                config.set('pref_quality', 'quality', 'best')
+            elif self.service_choice.GetStringSelection() == "Worst":
+                config.set('pref_quality', 'quality', 'worst')
+            with open('settings.ini', 'w') as configfile:
+                config.write(configfile)
 
         def dark_mode(self, event):
             if self.dark_mode_checkb.GetValue():
@@ -97,7 +116,7 @@ class Window(wx.Frame):
         ###########################################################################################################
         service = ['uStream', 'More...']    # 'More...' being a place holder and *future* redirect
         self.service_choice = wx.Choice(self.pnl, choices=service, pos=(15, 40), size=(352, 25))
-        self.service_choice.SetSelection(-1)
+        self.service_choice.SetSelection(0)
         ###########################################################################################################
         select_instr = "Select the streaming service to access"
         wx.StaticText(self.pnl, label=select_instr, pos=(15, 18))
@@ -147,8 +166,7 @@ class InterfaceWindow(wx.Frame):
             self.image_maybe2 = wx.StaticText(self, -1, "")
             self.image_maybe = wx.StaticText(self, -1, "")
             ###########################################################################################################
-            if 1 == 1:  # ToDo Get the listener running! Replace this with a correct modular approach
-                self.init_ustream()
+            self.init_ustream()
             ###########################################################################################################
             xlobox = wx.BoxSizer(wx.HORIZONTAL)
             xlobox.Add(self.png, 19, wx.ALIGN_CENTER)
@@ -156,16 +174,13 @@ class InterfaceWindow(wx.Frame):
             xlobox.Add(self.image_maybe, 5, wx.EXPAND + wx.CENTER)
             xlobox.Add(self.search_str_lnk, 25, wx.ALIGN_CENTER)
             xlobox.Add(self.image_maybe2, 5, wx.EXPAND + wx.CENTER)
-            # Todo: Currently the search bars are vague. Find a way, like a label, to distinguish the two
-            # Todo: Implement search bars
             ###########################################################################################################
             self.SetSizer(xlobox)
             self.Layout()
             ###########################################################################################################
 
         def open_manual_url(self, event):
-            os.system("streamlink " + self.search_str_lnk.GetValue() + " best")
-            # ToDo: Return errors from Streamlink appropriately
+            os.system("streamlink " + self.search_str_lnk.GetValue() + " " + config.get('pref_quality', 'quality'))
 
         def search_ustream(self, event):
             wx.MessageBox('uStream Search bar is unavailable.', 'Search Unavailable',
@@ -173,9 +188,7 @@ class InterfaceWindow(wx.Frame):
             # Search bar on uStream has...gone missing. There appears to remnants of it within the HTML however.
 
         def init_ustream(self):
-            if 1 == 1:
-                self.png = wx.StaticBitmap(self, -1,
-                                           wx.Bitmap(su_ustream_front.TopBar.uStream_logo, wx.BITMAP_TYPE_ANY))
+            self.png = wx.StaticBitmap(self, -1, wx.Bitmap(su_ustream_front.TopBar.uStream_logo, wx.BITMAP_TYPE_ANY))
             ###########################################################################################################
 
     class InterfaceSide(wx.Panel):
@@ -222,36 +235,50 @@ class InterfaceWindow(wx.Frame):
             InterfaceWindow.close_window(self.Parent)
 
         def open_selected(self, event):
-            if self.menu_tree.GetItemText(event.GetItem()) == su_ustream_front.SideBar.Browse[0]:
-                pub.sendMessage("setup_browse_upcoming", message="http://www.ustream.tv/upcoming")
-            elif self.menu_tree.GetItemText(event.GetItem()) == su_ustream_front.SideBar.Browse[1]:
-                pub.sendMessage("setup_browse_all", message="http://www.ustream.tv/explore/all")
-            elif self.menu_tree.GetItemText(event.GetItem()) == su_ustream_front.SideBar.Browse[2]:
-                pub.sendMessage("setup_browse_all", message="http://www.ustream.tv/explore/news/all?type=live")
-            elif self.menu_tree.GetItemText(event.GetItem()) == su_ustream_front.SideBar.Browse[3]:
-                pub.sendMessage("setup_browse_all", message="http://www.ustream.tv/explore/gaming/all?type=live")
-            elif self.menu_tree.GetItemText(event.GetItem()) == su_ustream_front.SideBar.Browse[4]:
-                pub.sendMessage("setup_browse_all", message="http://www.ustream.tv/explore/entertainment/all?type=live")
-            elif self.menu_tree.GetItemText(event.GetItem()) == su_ustream_front.SideBar.Browse[5]:
-                pub.sendMessage("setup_browse_all", message="http://www.ustream.tv/explore/sports/all?type=live")
-            elif self.menu_tree.GetItemText(event.GetItem()) == su_ustream_front.SideBar.Browse[6]:
-                pub.sendMessage("setup_browse_all", message="http://www.ustream.tv/explore/animals/all?type=live")
-            elif self.menu_tree.GetItemText(event.GetItem()) == su_ustream_front.SideBar.Browse[7]:
-                pub.sendMessage("setup_browse_all", message="http://www.ustream.tv/explore/music/all?type=live")
-            elif self.menu_tree.GetItemText(event.GetItem()) == su_ustream_front.SideBar.Browse[8]:
-                pub.sendMessage("setup_browse_all", message="http://www.ustream.tv/explore/technology/all?type=live")
-            elif self.menu_tree.GetItemText(event.GetItem()) == su_ustream_front.SideBar.Browse[9]:
-                pub.sendMessage("setup_browse_all", message="http://www.ustream.tv/explore/education/all?type=live")
-            elif self.menu_tree.GetItemText(event.GetItem()) == su_ustream_front.SideBar.Log_in[0]:
-                pub.sendMessage("log_in")
-            elif self.menu_tree.GetItemText(event.GetItem()) == su_ustream_front.SideBar.Log_in[1]:
-                pub.sendMessage("log_in")
-            elif self.menu_tree.GetItemText(event.GetItem()) == su_ustream_front.SideBar.Log_in[2]:
-                pub.sendMessage("log_in")
-            elif self.menu_tree.GetItemText(event.GetItem()) == su_ustream_front.SideBar.Options[0]:
-                #   Check to see if the user clicks 'advanced' and if they do, open a new frame
-                frame = Advanced()
-                frame.Show()
+            try:
+                if self.menu_tree.GetItemText(event.GetItem()) == su_ustream_front.SideBar.Browse[0]:
+                    pub.sendMessage("setup_browse_upcoming",
+                                    message="http://www.ustream.tv/upcoming")
+                elif self.menu_tree.GetItemText(event.GetItem()) == su_ustream_front.SideBar.Browse[1]:
+                    pub.sendMessage("setup_browse_all",
+                                    message="http://www.ustream.tv/explore/all")
+                elif self.menu_tree.GetItemText(event.GetItem()) == su_ustream_front.SideBar.Browse[2]:
+                    pub.sendMessage("setup_browse_all",
+                                    message="http://www.ustream.tv/explore/news/all?type=live")
+                elif self.menu_tree.GetItemText(event.GetItem()) == su_ustream_front.SideBar.Browse[3]:
+                    pub.sendMessage("setup_browse_all",
+                                    message="http://www.ustream.tv/explore/gaming/all?type=live")
+                elif self.menu_tree.GetItemText(event.GetItem()) == su_ustream_front.SideBar.Browse[4]:
+                    pub.sendMessage("setup_browse_all",
+                                    message="http://www.ustream.tv/explore/entertainment/all?type=live")
+                elif self.menu_tree.GetItemText(event.GetItem()) == su_ustream_front.SideBar.Browse[5]:
+                    pub.sendMessage("setup_browse_all",
+                                    message="http://www.ustream.tv/explore/sports/all?type=live")
+                elif self.menu_tree.GetItemText(event.GetItem()) == su_ustream_front.SideBar.Browse[6]:
+                    pub.sendMessage("setup_browse_all",
+                                    message="http://www.ustream.tv/explore/animals/all?type=live")
+                elif self.menu_tree.GetItemText(event.GetItem()) == su_ustream_front.SideBar.Browse[7]:
+                    pub.sendMessage("setup_browse_all",
+                                    message="http://www.ustream.tv/explore/music/all?type=live")
+                elif self.menu_tree.GetItemText(event.GetItem()) == su_ustream_front.SideBar.Browse[8]:
+                    pub.sendMessage("setup_browse_all",
+                                    message="http://www.ustream.tv/explore/technology/all?type=live")
+                elif self.menu_tree.GetItemText(event.GetItem()) == su_ustream_front.SideBar.Browse[9]:
+                    pub.sendMessage("setup_browse_all",
+                                    message="http://www.ustream.tv/explore/education/all?type=live")
+                elif self.menu_tree.GetItemText(event.GetItem()) == su_ustream_front.SideBar.Log_in[0]:
+                    pub.sendMessage("log_in")
+                elif self.menu_tree.GetItemText(event.GetItem()) == su_ustream_front.SideBar.Log_in[1]:
+                    pub.sendMessage("log_in")
+                elif self.menu_tree.GetItemText(event.GetItem()) == su_ustream_front.SideBar.Log_in[2]:
+                    pub.sendMessage("log_in")
+                elif self.menu_tree.GetItemText(event.GetItem()) == su_ustream_front.SideBar.Options[0]:
+                    #   Check to see if the user clicks 'advanced' and if they do, open a new frame
+                    frame = Advanced()
+                    frame.Show()
+            except RuntimeError:
+                temp = 1
+                # This occurs when the program closes and reverts back to the start-up window
 
         def dark_mode(self, message):
             self.colour_control()
@@ -276,8 +303,7 @@ class InterfaceWindow(wx.Frame):
             self.broadcaster_profile_title, self.broadcaster_profile_description = ustream.ViewProfile.get_info(url)
 
         def show_profile(self, message):
-            # ToDo: Assign Variables here
-            # ToDo: Re-assign widgets so refresh of page can be possible
+            # ToDo: Fix/Redo layout
             self.setup_profile(message)
 
             self.bs.Add((0, 5))
@@ -318,10 +344,7 @@ class InterfaceWindow(wx.Frame):
         def init_ui(self):
             self.colour_control()
             ###########################################################################################################
-            # self.broadcaster_data_length = len(broadcaster_title)
-            # ^ Not usable as scraper returning anomalyous amounts of data
-            # v Use this as a reference point instead as it is the most consistent max length
-            self.broadcaster_data_lenngth_custom = 14
+            self.broadcaster_data_length = len(broadcaster_title)
             self.broadcaster_index = 0
             self.page_in_use = 0
             self.broadcaster_profile_title = ""
@@ -406,7 +429,7 @@ class InterfaceWindow(wx.Frame):
             min_a = 0
             max_a = 6
             for i in range(min_a, max_a):
-                if self.broadcaster_index >= self.broadcaster_data_lenngth_custom:
+                if self.broadcaster_index >= self.broadcaster_data_length:
                     break
                     # This 'code' runs when there is nothing else to display. Iterator (i) should always run until 5.
                 else:
@@ -418,7 +441,7 @@ class InterfaceWindow(wx.Frame):
             return self.broadcaster_index
 
         def next_page(self, event):
-            if self.broadcaster_index != self.broadcaster_data_lenngth_custom:
+            if self.broadcaster_index != self.broadcaster_data_length:
                 pub.sendMessage("clear_container", message='clear_container')
                 self.SetSizer(self.bs)
                 self.Layout()
@@ -435,35 +458,37 @@ class InterfaceWindow(wx.Frame):
         class BroadcastContainer(wx.Panel):
             def __init__(self, parent):
                 wx.Panel.__init__(self, parent, size=(353, 297))
+                # ToDo: Fix/Redo layout
                 global broadcaster_title, broadcaster_viewers, broadcaster_url, broadcaster_thumbnail
                 pub.subscribe(self.clear_container, 'clear_container')
                 self.bs = wx.BoxSizer(wx.VERTICAL)
-                # self.bs.Add(wx.StaticText(self, -1, "title"))
 
                 self.title = wx.StaticText(self, -1, broadcaster_title[InterfaceWindow.InterfaceMain.get_index(parent)],
                                            style=wx.ALIGN_CENTRE)
                 self.title.name = broadcaster_url[InterfaceWindow.InterfaceMain.get_index(parent)]
                 self.bs.Add(self.title), wx.EXPAND
                 self.title.Bind(wx.EVT_LEFT_DOWN, self.on_click_title)
-
-                self.thumbnail = wx.Image("thumbnail.png", wx.BITMAP_TYPE_PNG).ConvertToBitmap()
-                self.thumbnail_sb = wx.StaticBitmap(self, -1, self.thumbnail, name="Invis")
+                urllib.request.urlretrieve(broadcaster_thumbnail[InterfaceWindow.InterfaceMain.get_index(parent)],
+                                           "temp_img/" + str(InterfaceWindow.InterfaceMain.get_index(parent)) + ".bmp")
+                self.thumbnail = wx.Image("temp_img/" + str(InterfaceWindow.InterfaceMain.get_index(parent)) + ".bmp")
+                self.thumbnail_use_me = self.thumbnail.ConvertToBitmap()
+                self.thumbnail_sb = wx.StaticBitmap(self, -1, self.thumbnail_use_me, name="empty")
                 self.thumbnail_sb.name = broadcaster_url[InterfaceWindow.InterfaceMain.get_index(parent)]
                 self.thumbnail_sb.Bind(wx.EVT_LEFT_DOWN, self.on_click_thumbnail)
                 self.bs.Add(self.thumbnail_sb)
-                # ^Temporary thumbnail implementation
-                # Note: ctrl+/ to comment blocks of code out
-                # ToDo: Find another way of displaying thumbnails, as the PIL + convert method is impossible
-                # self.bs.Add(wx.StaticText(self, -1, "viewers"))
-                self.bs.Add(wx.StaticText(self, -1, broadcaster_viewers[InterfaceWindow.InterfaceMain.get_index(parent)],
-                                          style=wx.ALIGN_CENTRE))
+
+                try:
+                    self.bs.Add(wx.StaticText(self, -1, broadcaster_viewers[InterfaceWindow.InterfaceMain.
+                                              get_index(parent)], style=wx.ALIGN_CENTRE))
+                except IndexError:
+                    self.bs.Add(wx.StaticText(self, -1, "N/A", style=wx.ALIGN_CENTRE))
                 self.SetSizer(self.bs)
                 self.Layout()
 
             @staticmethod
             def on_click_thumbnail(event):
                 name = event.GetEventObject().name
-                script = "streamlink " + name + " best"
+                script = "streamlink " + name + " " + config.get('pref_quality', 'quality')
                 os.system(script)
 
             @staticmethod
