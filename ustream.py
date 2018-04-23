@@ -107,8 +107,8 @@ class BrowseUpcoming:
         broadcaster_title = [temp.replace('\t', '') for temp in broadcaster_title]
         # The broadcaster title on the site is heavily infested with '\n and \t tags
         broadcaster_date = [temp.replace('\n', '') for temp in broadcaster_date]
-        print("POTATO")
         return broadcaster_title, broadcaster_date, broadcaster_url, broadcaster_thumbnail
+
 
 class ViewProfile:
     @staticmethod
@@ -125,8 +125,6 @@ class ViewProfile:
         for article in soup.find_all('article', class_="description"):
             broadcaster_description = article.text
 
-        print(broadcaster_title)
-        print(broadcaster_description)
         return broadcaster_title, broadcaster_description
 
 # message = "http://www.ustream.tv/nasahdtv"

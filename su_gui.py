@@ -5,7 +5,9 @@ import su_ustream_front     # Settings in another file, specifically for uStream
 import ustream
 import configparser
 import os
-
+###########################################################################################################
+#   WARNING! This application is currently configured for PURELY uStream!
+###########################################################################################################
 config = configparser.ConfigParser()
 config.read('settings.ini')
 
@@ -311,8 +313,6 @@ class InterfaceWindow(wx.Frame):
             self.xyz.Wrap(700)
             self.bs.Add(self.xyz, 1, wx.EXPAND)
 
-            self.bs.Add((0, 5))
-
             self.kia = wx.StaticText(self, label=self.broadcaster_profile_description, style=wx.ALIGN_CENTRE)
             self.kia.Wrap(700)
             self.bs.Add(self.kia, 1, wx.EXPAND)
@@ -321,25 +321,37 @@ class InterfaceWindow(wx.Frame):
 
             self.open_current_stream = wx.Button(self, label='Play Live Stream', size=(175, 33))
             self.bs2.Add(self.open_current_stream, 1, wx.ALIGN_BOTTOM)
-            self.open_current_stream.Bind(wx.EVT_BUTTON, self.previous_page)
+            self.open_current_stream.Bind(wx.EVT_BUTTON, lambda evt, temp=message: self.profile_play(evt, temp))
 
             self.spacer = wx.StaticText(self, -1, "")
             self.bs2.Add(self.spacer, 10, wx.EXPAND)
 
             self.open_vod_list = wx.Button(self, label='View VoDs', size=(175, 33))
             self.bs2.Add(self.open_vod_list, 1, wx.ALIGN_BOTTOM)
-            self.open_vod_list.Bind(wx.EVT_BUTTON, self.previous_page)
+            self.open_vod_list.Bind(wx.EVT_BUTTON, self.profile_view_vod)
 
             self.spacer2 = wx.StaticText(self, -1, "")
             self.bs2.Add(self.spacer2, 10, wx.EXPAND)
 
             self.open_related = wx.Button(self, label='Show Related Channels', size=(175, 33))
             self.bs2.Add(self.open_related, 1, wx.ALIGN_BOTTOM)
-            self.open_related.Bind(wx.EVT_BUTTON, self.previous_page)
+            self.open_related.Bind(wx.EVT_BUTTON, self.profile_view_related)
             self.bs.Add(self.bs2)
 
             self.SetSizer(self.bs)
             self.Layout()
+
+        def profile_play(self, event, url):
+            script = "streamlink " + url + " " + config.get('pref_quality', 'quality')
+            os.system(script)
+
+        def profile_view_vod(self, event):
+            wx.MessageBox('Not Available for this service.', 'Not Available',
+                          wx.OK | wx.ICON_INFORMATION)
+
+        def profile_view_related(self, event):
+            wx.MessageBox('Not Available for this service.', 'Not Available',
+                          wx.OK | wx.ICON_INFORMATION)
 
         def init_ui(self):
             self.colour_control()
