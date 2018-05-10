@@ -1,25 +1,18 @@
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 import bs4 as BeautifulSoup
+
+
 #########################################################################################################
 # Set up selenium for virtual browsing, thus enabling us to look at the lists
 #########################################################################################################
-# ToDo: Figure out a way of scrolling/clicking the 'load more' button
-
-class SetUpPageSearch:
-    @staticmethod
-    def get_page(url):
-        options = Options()
-        options.add_argument('--headless')
-        options.add_argument('--mute-audio')
-
-        driver = webdriver.Chrome(chrome_options=options)
-        driver.get(url)
-
-        url = driver.page_source
-        driver.quit()
-        return url
-
+# ToDo: Figure out a way of scrolling/clicking the 'load more' button on the uStream web-service
+#########################################################################################################
+# Search function isn't existent on the uStream web-service, 'search' code is not functional and untested
+# http://www.ustream.tv/search?q=nasa&category=all&type=live&location=anywhere is the 'search' URL
+# before the functionality was removed from the web service. Page 'scrape' is fundamentally the same as
+# class BrowseAll therefore another class does not need to be developed.
+#########################################################################################################
 class SetUpPage:
     @staticmethod
     def get_page(url):
@@ -129,3 +122,4 @@ class ViewProfile:
 
 # message = "http://www.ustream.tv/nasahdtv"
 # ViewProfile.get_info(message)
+# Above code is for testing functionality on a static URL
